@@ -23,7 +23,7 @@ go mod tidy
 ```bash
 go run cmd/main.go path/to/archive.xlsx
 ```
-Substitua `script.go` pelo nome do arquivo Go e `path/to/archive.xlsx` pelo caminho do seu Excel.
+Substitua `path/to/archive.xlsx` pelo caminho do seu Excel.
 
 ## :heavy_check_mark: Saída
 - PDFs gerados na pasta `qrcodes_output`.
