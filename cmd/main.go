@@ -6,7 +6,9 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
+	"github.com/champiao/goQr/helper"
 	"github.com/jung-kurt/gofpdf"
 	"github.com/skip2/go-qrcode"
 	"github.com/xuri/excelize/v2"
@@ -38,6 +40,10 @@ func main() {
 	os.MkdirAll(outputDir, os.ModePerm)
 
 	headers := rows[0]
+	hIndex := map[string]int{}
+	for i, h := range headers {
+		hIndex[strings.ToLower(strings.TrimSpace(h))] = i
+	}
 	rowIterator, errRow := f.Rows(sheetName)
 	if errRow != nil {
 		fmt.Println("some problems on my ROW function")
@@ -47,24 +53,6 @@ func main() {
 			fmt.Println(errDefer)
 		}
 	}()
-	var firstColumnValue []string
-	var column []string
-	var errColumn error
-	var lines []string
-	for rowIterator.Next() {
-		column, errColumn = rowIterator.Columns()
-		if errColumn != nil {
-			fmt.Print("error to get columns")
-		}
-		if len(column) == 0 || column[0] == "" {
-			continue
-		} else {
-			lines = splitLines(column[0])
-		}
-		firstColumnValue = append(firstColumnValue, lines...)
-
-	}
-	fmt.Println(firstColumnValue)
 
 	for i, row := range rows[1:] {
 		var content string
@@ -72,9 +60,21 @@ func main() {
 			content += fmt.Sprintf("%s: %s\n", headers[j], cell)
 		}
 
+		to := helper.GetCellByHeader(row, hIndex, "e-mail to")
+		if to == "" {
+			log.Printf("Linha %d: campo 'to' vazio, ignorando linha.", i+1)
+			continue
+		}
+		subject := helper.GetCellByHeader(row, hIndex, "Planta")
+		repCode := helper.GetCellByHeader(row, hIndex, "REP")
+		area := helper.GetCellByHeader(row, hIndex, "Área")
+		loc := helper.GetCellByHeader(row, hIndex, "Localização")
+		body := fmt.Sprintf("%s \n %s \n %s \n Informe o problema:", repCode, area, loc)
+		mailto := helper.BuildMailtoURI(to, subject, body)
+
 		// Criar QR code como PNG temporário
-		qrPath := filepath.Join(outputDir, fmt.Sprintf("%s.png", firstColumnValue[i+1]))
-		qrCode, err := qrcode.New(content, qrcode.Low)
+		qrPath := filepath.Join(outputDir, fmt.Sprintf("%s.png", repCode))
+		qrCode, err := qrcode.New(mailto, qrcode.Low)
 		if err != nil {
 			log.Fatalf("Erro ao gerar QR code: %v", err)
 		}
@@ -91,12 +91,12 @@ func main() {
 		pdf.AddPage()
 		pdf.ImageOptions(qrPath, 80, 50, 50, 50, false, gofpdf.ImageOptions{ImageType: "PNG", ReadDpi: true}, 0, "")
 		pdf.SetFont("Arial", "", 10)
-		y := 110.0
-		for _, line := range splitLines(content) {
-			pdf.Text(105, y, line)
-			y += 5
-		}
-		pdfPath := filepath.Join(outputDir, fmt.Sprintf("%s.pdf", firstColumnValue[i+1]))
+		// y := 110.0
+		// for _, line := range splitLines(content) {
+		// 	pdf.Text(105, y, line)
+		// 	y += 5
+		// }
+		pdfPath := filepath.Join(outputDir, fmt.Sprintf("%s_%s.pdf", subject, repCode))
 		err = pdf.OutputFileAndClose(pdfPath)
 		if err != nil {
 			log.Fatalf("Erro ao salvar PDF: %v", err)
@@ -105,19 +105,4 @@ func main() {
 		os.Remove(qrPath)
 		fmt.Printf("PDF gerado: %s\n", pdfPath)
 	}
-}
-
-func splitLines(s string) []string {
-	var lines []string
-	start := 0
-	for i, c := range s {
-		if c == '\n' {
-			lines = append(lines, s[start:i])
-			start = i + 1
-		}
-	}
-	if start < len(s) {
-		lines = append(lines, s[start:])
-	}
-	return lines
 }
