@@ -31,10 +31,10 @@ Substitua `path/to/archive.xlsx` pelo caminho do seu Excel.
 
 ## 💡 Exemplo
 Se o Excel tiver:
-| Codigo| Loc   | Coluna   |
-|-------|-------|----------|
-| 0001  | D3    | 4        |
-| 0002  | D9    | 3        |
+| Planta| e-mail to  | REP      | Área| Localização |
+|-------|------------|----------|
+| 0001  | D3@test.com| 4        |
+| 0002  | D9@test.com| 3        |
 
 O programa irá gerar:
 - `0001.pdf` com QR code e dados de 0001.
