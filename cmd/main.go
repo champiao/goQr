@@ -91,11 +91,16 @@ func main() {
 		pdf.AddPage()
 		pdf.ImageOptions(qrPath, 80, 50, 50, 50, false, gofpdf.ImageOptions{ImageType: "PNG", ReadDpi: true}, 0, "")
 		pdf.SetFont("Arial", "", 10)
-		// y := 110.0
-		// for _, line := range splitLines(content) {
-		// 	pdf.Text(105, y, line)
-		// 	y += 5
-		// }
+		y := 45.0
+		var info []string
+		info = append(info, repCode, loc)
+		for _, newInfo := range info {
+			helper.NormalizeText(newInfo)
+		}
+		for _, line := range info {
+			pdf.Text(105, y, line)
+			y += 5
+		}
 		pdfPath := filepath.Join(outputDir, fmt.Sprintf("%s_%s.pdf", subject, repCode))
 		err = pdf.OutputFileAndClose(pdfPath)
 		if err != nil {
